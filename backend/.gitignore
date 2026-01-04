@@ -1,0 +1,42 @@
+# Node.js
+*node_modules/
+dist/
+.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+.vscode/
+*.tgz
+.idea/
+.vs/
+
+# Prisma
+/prisma/*.sqlite
+/prisma/*.db
+
+# NestJS specific
+/.nest-cli.json
+/src/**/*.js
+/src/**/*.d.ts
+!/src/**/!(*.d).ts
+/test/**/*.js
+/test/**/*.d.ts
+!/test/**/!(*.d).ts
+
+# misc
+.nyc_output/
+.tmp/
+.temp/
+.cache/
