@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { RestaurantModule } from './restaurant/restaurant.module';
+import { OrderModule } from './order/order.module';
+import { PaymentMethodModule } from './payment-method/payment-method.module';
+import { MenuModule } from './menu/menu.module';
 
 @Module({
   imports: [
@@ -15,8 +18,11 @@ import { UsersModule } from './users/users.module';
     }),
     AuthModule,
     UsersModule,
+    PrismaModule,
+    RestaurantModule,
+    OrderModule,
+    PaymentMethodModule,
+    MenuModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
