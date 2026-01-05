@@ -3,25 +3,26 @@
 import { useAuth } from '@/context/AuthContext';
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="p-8 bg-white rounded shadow-md w-96">
-        <h1 className="mb-4 text-2xl font-bold">Welcome</h1>
+    <div className="container p-4 mx-auto">
+      <h1 className="mb-8 text-3xl font-bold">Dashboard</h1>
+      <div className="p-6 bg-white rounded-lg shadow-md dark:bg-secondary">
+        <h2 className="mb-4 text-2xl font-semibold">User Information</h2>
         {user && (
-          <div>
-            <p>User ID: {user.userId}</p>
-            <p>Role: {user.role}</p>
-            <p>Country: {user.country}</p>
+          <div className="space-y-2">
+            <p>
+              <span className="font-semibold">User ID:</span> {user.userId}
+            </p>
+            <p>
+              <span className="font-semibold">Role:</span> <span className="px-2 py-1 text-sm font-medium text-white bg-indigo-500 rounded-full">{user.role}</span>
+            </p>
+            <p>
+              <span className="font-semibold">Country:</span> {user.country}
+            </p>
           </div>
         )}
-        <button
-          onClick={logout}
-          className="w-full px-4 py-2 mt-4 text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-        >
-          Logout
-        </button>
       </div>
     </div>
   );

@@ -23,31 +23,39 @@ interface Order {
 export default function OrdersPage() {
   const { data, loading, error } = useQuery(GET_ORDERS_QUERY);
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
+  if (loading) return <div className="container p-4 mx-auto">Loading...</div>;
+  if (error) return <div className="container p-4 mx-auto">Error: {error.message}</div>;
 
   return (
     <div className="container p-4 mx-auto">
-      <h1 className="mb-4 text-2xl font-bold">Your Orders</h1>
+      <h1 className="mb-8 text-3xl font-bold">Your Orders</h1>
       {data.orders.length === 0 ? (
-        <p>You have no orders.</p>
+        <div className="p-6 text-center bg-white rounded-lg shadow-md dark:bg-secondary">
+          <p className="text-lg">You have no orders.</p>
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {data.orders.map((order: Order) => (
-            <div key={order.id} className="p-4 bg-white rounded shadow-md">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xl font-bold">Order #{order.id}</h2>
-                <div className="font-bold text-gray-800">${order.total.toFixed(2)}</div>
+            <div key={order.id} className="p-6 bg-white rounded-lg shadow-md dark:bg-secondary">
+              <div className="flex flex-col justify-between mb-4 sm:flex-row">
+                <div>
+                  <h2 className="text-2xl font-semibold">Order #{order.id}</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end">
+                  <p className="text-2xl font-bold">${order.total.toFixed(2)}</p>
+                  <span className={`px-2 py-1 mt-1 text-sm rounded ${order.status === 'PAID' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'}`}>
+                    {order.status}
+                  </span>
+                </div>
               </div>
-              <p className="text-sm text-gray-600">
-                {new Date(order.createdAt).toLocaleDateString()} -{' '}
-                <span className="font-medium">{order.status}</span>
-              </p>
-              <div className="mt-4">
-                <h3 className="mb-2 font-bold">Items:</h3>
-                <ul className="space-y-1">
+              <div>
+                <h3 className="mb-2 text-lg font-semibold">Items:</h3>
+                <ul className="space-y-2">
                   {order.orderItems.map((item) => (
-                    <li key={item.id} className="flex justify-between">
+                    <li key={item.id} className="flex justify-between pb-2 border-b border-border">
                       <span>
                         {item.menuItem.name} x {item.quantity}
                       </span>

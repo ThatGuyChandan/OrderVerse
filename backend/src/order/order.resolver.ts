@@ -10,7 +10,7 @@ import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { Role } from '@prisma/client';
 import { CurrentUser } from 'src/auth/current-user.decorator';
-import { JwtPayload } from 'src/auth/interfaces/jwt-payload.interface';
+import type { JwtPayload } from 'src/auth/interfaces/jwt-payload.interface';
 
 @Resolver(() => Order)
 export class OrderResolver {

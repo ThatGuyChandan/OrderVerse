@@ -4,7 +4,7 @@ import { MenuItem } from './entities/menu-item.entity';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CurrentUser } from 'src/auth/current-user.decorator';
-import { JwtPayload } from 'src/auth/interfaces/jwt-payload.interface';
+import type { JwtPayload } from 'src/auth/interfaces/jwt-payload.interface';
 
 @Resolver(() => MenuItem)
 export class MenuResolver {

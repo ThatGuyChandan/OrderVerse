@@ -3,6 +3,7 @@
 import { useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import Navbar from '@/components/Navbar';
 
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -18,8 +19,17 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
 
   // While checking for authentication or redirecting, you can show a loader
   if (!isAuthenticated) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div>Loading...</div>
+      </div>
+    );
   }
 
-  return <>{children}</>;
+  return (
+    <div>
+      <Navbar />
+      <main className="p-4">{children}</main>
+    </div>
+  );
 }

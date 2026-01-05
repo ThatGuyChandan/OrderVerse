@@ -3,7 +3,7 @@ import { setContext } from '@apollo/client/link/context';
 import Cookies from 'js-cookie';
 
 const httpLink = createHttpLink({
-  uri: 'http://localhost:3001/graphql', // Assuming the backend is on port 3001
+  uri: process.env.NEXT_PUBLIC_API_URL,
 });
 
 const authLink = setContext((_, { headers }) => {
