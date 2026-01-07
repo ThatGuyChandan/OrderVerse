@@ -10,19 +10,45 @@ import { AddOrderItemInput } from './dto/add-order-item.input';
 export class OrderService {
   constructor(private prisma: PrismaService) {}
 
-  create(createOrderInput: CreateOrderInput, country: any) {
-    return this.prisma.order.create({
-      data: {
-        ...createOrderInput,
-        country,
-        status: OrderStatus.CREATED,
-      },
+  create(createOrderInput: CreateOrderInput, user: JwtPayload) {
+    return this.prisma.$transaction(async (prisma) => {
+      const order = await prisma.order.create({
+        data: {
+          userId: user.userId,
+          country: user.country,
+          status: OrderStatus.CREATED,
+        },
+      });
+
+      const orderItems = createOrderInput.orderItems.map((item) =>
+        prisma.orderItem.create({
+          data: {
+            orderId: order.id,
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
+          },
+        }),
+      );
+
+      await Promise.all(orderItems);
+
+      return order;
     });
   }
 
   findAll(user: JwtPayload) {
     const where = createRebacWhere(user);
-    return this.prisma.order.findMany({ where });
+    return this.prisma.order.findMany({
+      where,
+      include: {
+        orderItems: {
+          include: {
+            menuItem: true,
+          },
+        },
+        user: true,
+      },
+    });
   }
 
   async addOrderItem(addOrderItemInput: AddOrderItemInput, user: JwtPayload) {

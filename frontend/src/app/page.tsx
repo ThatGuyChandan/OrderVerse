@@ -1,40 +1,45 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation } from '@apollo/client';
 import { useRouter } from 'next/navigation';
-import { LOGIN_MUTATION } from '@/graphql/mutations';
 import { useAuth } from '@/context/AuthContext';
+import api from '@/lib/api';
 
 export default function LoginPage() {
   const [name, setName] = useState('');
   const { login } = useAuth();
   const router = useRouter();
-  const [loginMutation, { loading, error }] = useMutation(LOGIN_MUTATION);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
     try {
-      const { data } = await loginMutation({ variables: { name } });
-      if (data.login.access_token) {
-        login(data.login.access_token);
+      const { data } = await api.post('/auth/login', { name });
+      if (data.access_token) {
+        login(data.access_token);
         router.push('/dashboard'); // Redirect to dashboard page after login
       }
     } catch (err) {
+      setError('Login failed');
       console.error('Login failed', err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md dark:bg-secondary">
+    <div className="login-page">
+      <div className="card login-card">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-foreground">OrderVerse</h1>
-          <p className="text-gray-500 dark:text-gray-400">Welcome back! Please login to your account.</p>
+          <h1>OrderVerse</h1>
+          <p>Welcome back! Please sign in to continue.</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-foreground">
+            <label htmlFor="name" className="form-label">
               Username
             </label>
             <input
@@ -42,18 +47,23 @@ export default function LoginPage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="block w-full px-3 py-2 mt-1 bg-transparent border border-border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+              className="form-input"
               required
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium tracking-wide text-primary-foreground transition-colors duration-200 rounded-md bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            className="btn btn-primary"
+            style={{ width: '100%' }}
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
-          {error && <p className="mt-2 text-sm text-destructive">{error.message}</p>}
+          {error && (
+            <p className="text-danger" style={{ marginTop: '1rem', textAlign: 'center' }}>
+              {error}
+            </p>
+          )}
         </form>
       </div>
     </div>

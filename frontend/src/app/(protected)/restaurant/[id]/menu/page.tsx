@@ -1,9 +1,9 @@
 'use client';
 
-import { useQuery } from '@apollo/client';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { GET_RESTAURANT_MENU_QUERY } from '@/graphql/queries';
 import { useCart } from '@/context/CartContext';
+import api from '@/lib/api';
 
 interface MenuItem {
   id: string;
@@ -12,44 +12,90 @@ interface MenuItem {
   description: string;
 }
 
+interface Restaurant {
+  id: string;
+  name: string;
+  menu: MenuItem[];
+}
+
 export default function MenuPage() {
   const params = useParams();
   const id = params.id;
   const restaurantId = parseInt(id as string, 10);
-  const { addToCart } = useCart();
+  const { addToCart, removeFromCart, getItemQuantity } = useCart();
 
-  const { data, loading, error } = useQuery(GET_RESTAURANT_MENU_QUERY, {
-    variables: { restaurantId },
-    skip: !id,
-  });
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (loading) return <div className="container p-4 mx-auto">Loading...</div>;
-  if (error) return <div className="container p-4 mx-auto">Error: {error.message}</div>;
-  if (!data) return <div className="container p-4 mx-auto">No menu found for this restaurant.</div>;
+  useEffect(() => {
+    if (!id) return;
 
-  const { restaurant } = data;
+    const fetchMenu = async () => {
+      try {
+        const { data } = await api.get(`/menu`, { params: { restaurantId } });
+        // The current API returns all menu items, not specific to a restaurant.
+        // For now, we'll simulate filtering by restaurant if needed, or adjust backend.
+        // Assuming the backend /menu endpoint now filters by restaurantId.
+        setRestaurant({ id: restaurantId.toString(), name: `Restaurant ${restaurantId}`, menu: data });
+      } catch (err) {
+        setError('Failed to fetch menu');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMenu();
+  }, [id, restaurantId]);
+
+
+  if (loading) return <div className="container p-4 mx-auto text-center text-muted-foreground">Loading menu...</div>;
+  if (error) return <div className="container p-4 mx-auto text-center text-destructive">Error: {error}</div>;
+  if (!restaurant || restaurant.menu.length === 0) return <div className="container p-4 mx-auto text-center text-muted-foreground">No menu found for this restaurant.</div>;
+
 
   return (
-    <div className="container p-4 mx-auto">
-      <h1 className="mb-8 text-3xl font-bold">{restaurant.name} - Menu</h1>
+    <div className="container mx-auto">
+      <h1 className="mb-8 text-4xl font-extrabold text-foreground">{restaurant.name} - Menu</h1>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {restaurant.menu.map((item: MenuItem) => (
-          <div key={item.id} className="overflow-hidden bg-white rounded-lg shadow-md dark:bg-secondary">
-            <div className="p-6">
-              <h2 className="mb-2 text-2xl font-semibold">{item.name}</h2>
-              <p className="mb-4 text-gray-600 dark:text-gray-400">{item.description}</p>
-              <div className="flex items-center justify-between">
-                <p className="text-xl font-bold">${item.price.toFixed(2)}</p>
-                <button
-                  onClick={() => addToCart(item)}
-                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium tracking-wide text-primary-foreground transition-colors duration-200 rounded-md bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                >
-                  Add to Cart
-                </button>
+        {restaurant.menu.map((item: MenuItem) => {
+          const quantity = getItemQuantity(item.id);
+          return (
+            <div key={item.id} className="relative overflow-hidden bg-card border border-border rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+              <div className="p-6">
+                <h2 className="mb-2 text-2xl font-bold text-foreground">{item.name}</h2>
+                <p className="mb-4 text-muted-foreground text-sm">{item.description}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xl font-extrabold text-primary">${item.price.toFixed(2)}</p>
+                  {quantity === 0 ? (
+                    <button
+                      onClick={() => addToCart(item)}
+                      className="px-5 py-2 bg-primary text-primary-foreground rounded-lg shadow-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 transform hover:scale-105"
+                    >
+                      Add to Cart
+                    </button>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => removeFromCart(item.id)}
+                        className="px-3 py-1 bg-destructive text-destructive-foreground rounded-lg shadow-md hover:bg-destructive/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-destructive transition-all duration-300 transform hover:scale-105"
+                      >
+                        -
+                      </button>
+                      <span className="text-lg font-bold text-foreground">{quantity}</span>
+                      <button
+                        onClick={() => addToCart(item)}
+                        className="px-3 py-1 bg-primary text-primary-foreground rounded-lg shadow-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 transform hover:scale-105"
+                      >
+                        +
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

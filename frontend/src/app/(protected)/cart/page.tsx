@@ -1,50 +1,85 @@
 'use client';
 
+import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
+import api from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { Role } from '@/types/enums';
 
 export default function CartPage() {
+  const { user } = useAuth();
   const { cartItems, totalPrice, clearCart, removeFromCart } = useCart();
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const router = useRouter();
+
+  const handleCheckout = async () => {
+    setCheckoutLoading(true);
+    try {
+      const orderItemsPayload = cartItems.map(item => ({
+        menuItemId: parseInt(item.id),
+        quantity: item.quantity,
+      }));
+
+      await api.post('/orders', {
+        orderItems: orderItemsPayload,
+      });
+      clearCart();
+      router.push('/orders'); // Redirect to orders page after successful checkout
+    } catch (err) {
+      console.error('Checkout failed', err);
+      alert('Checkout failed. Please try again.');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
 
   return (
-    <div className="container p-4 mx-auto">
-      <h1 className="mb-8 text-3xl font-bold">Your Cart</h1>
+    <div className="container">
+      <h1>Your Cart</h1>
       {cartItems.length === 0 ? (
-        <div className="p-6 text-center bg-white rounded-lg shadow-md dark:bg-secondary">
-          <p className="text-lg">Your cart is empty.</p>
+        <div className="card text-center">
+          <p>Your cart is empty.</p>
         </div>
       ) : (
-        <div className="p-6 bg-white rounded-lg shadow-md dark:bg-secondary">
-          <div className="space-y-4">
+        <div className="card">
+          <div className="space-y-6">
             {cartItems.map((item) => (
-              <div key={item.id} className="flex items-center justify-between pb-4 border-b border-border">
+              <div key={item.id} className="flex items-center justify-between" style={{ borderBottom: '1px solid #eee', paddingBottom: '1rem' }}>
                 <div>
-                  <h2 className="text-xl font-semibold">{item.name}</h2>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <h2>{item.name}</h2>
+                  <p>
                     ${item.price.toFixed(2)} x {item.quantity}
                   </p>
                 </div>
-                <div className='flex items-center'>
-                  <p className="text-xl font-semibold">
+                <div className='flex items-center' style={{ gap: '1rem' }}>
+                  <p className="font-bold text-2xl">
                     ${(item.price * item.quantity).toFixed(2)}
                   </p>
-                  <button onClick={() => removeFromCart(item.id)} className="ml-4 text-red-500 hover:text-red-700">
+                  <button onClick={() => removeFromCart(item.id)} className="btn btn-danger">
                     Remove
                   </button>
                 </div>
               </div>
             ))}
           </div>
-          <div className="flex items-center justify-between mt-6">
-            <p className="text-2xl font-bold">Total:</p>
-            <p className="text-2xl font-bold">${totalPrice.toFixed(2)}</p>
+          <div className="flex items-center justify-between mt-8">
+            <p className="font-bold text-2xl">Total:</p>
+            <p className="font-extrabold text-2xl">${totalPrice.toFixed(2)}</p>
           </div>
-          <div className="flex justify-between mt-6">
-            <button onClick={clearCart} className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium tracking-wide text-white transition-colors duration-200 bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+          <div className="flex justify-between mt-8">
+            <button onClick={clearCart} className="btn btn-secondary">
               Clear Cart
             </button>
-            <button className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium tracking-wide text-primary-foreground transition-colors duration-200 rounded-md bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
-              Proceed to Checkout
-            </button>
+            {(user?.role === Role.ADMIN || user?.role === Role.MANAGER) && (
+              <button
+                onClick={handleCheckout}
+                disabled={checkoutLoading}
+                className="btn btn-primary"
+              >
+                {checkoutLoading ? 'Processing...' : 'Proceed to Checkout'}
+              </button>
+            )}
           </div>
         </div>
       )}

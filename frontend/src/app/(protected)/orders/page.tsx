@@ -1,7 +1,9 @@
 'use client';
 
-import { useQuery } from '@apollo/client';
-import { GET_ORDERS_QUERY } from '@/graphql/queries';
+import { useState, useEffect } from 'react';
+import api from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
+import { Role } from '@/types/enums';
 
 interface OrderItem {
   id: string;
@@ -15,55 +17,109 @@ interface OrderItem {
 interface Order {
   id: string;
   status: string;
-  total: number;
   createdAt: string;
   orderItems: OrderItem[];
+  user: {
+    name: string;
+  };
 }
 
 export default function OrdersPage() {
-  const { data, loading, error } = useQuery(GET_ORDERS_QUERY);
+  const { user } = useAuth();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (loading) return <div className="container p-4 mx-auto">Loading...</div>;
-  if (error) return <div className="container p-4 mx-auto">Error: {error.message}</div>;
+  const fetchOrders = async () => {
+    try {
+      const { data } = await api.get('/orders');
+      setOrders(data);
+    } catch (err) {
+      setError('Failed to fetch orders');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const calculateTotal = (orderItems: OrderItem[]) => {
+    return orderItems.reduce((total, item) => total + item.menuItem.price * item.quantity, 0);
+  };
+
+  const getStatusClasses = (status: string) => {
+    switch (status) {
+      case 'PAID':
+        return 'status-paid';
+      case 'CREATED':
+        return 'status-created';
+      case 'CANCELLED':
+        return 'status-cancelled';
+      default:
+        return '';
+    }
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    try {
+      await api.post(`/orders/${orderId}/cancel`);
+      fetchOrders();
+    } catch (err) {
+      console.error('Failed to cancel order', err);
+      alert('Failed to cancel order.');
+    }
+  };
+
+  if (loading) return <div className="container text-center">Loading your orders...</div>;
+  if (error) return <div className="container text-center text-danger">Error: {error}</div>;
 
   return (
-    <div className="container p-4 mx-auto">
-      <h1 className="mb-8 text-3xl font-bold">Your Orders</h1>
-      {data.orders.length === 0 ? (
-        <div className="p-6 text-center bg-white rounded-lg shadow-md dark:bg-secondary">
-          <p className="text-lg">You have no orders.</p>
+    <div className="container">
+      <h1>Your Orders</h1>
+      {orders.length === 0 ? (
+        <div className="card text-center">
+          <p>You have no orders yet.</p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {data.orders.map((order: Order) => (
-            <div key={order.id} className="p-6 bg-white rounded-lg shadow-md dark:bg-secondary">
-              <div className="flex flex-col justify-between mb-4 sm:flex-row">
+        <div className="space-y-8">
+          {orders.map((order: Order) => (
+            <div key={order.id} className="card">
+              <div className="flex justify-between">
                 <div>
-                  <h2 className="text-2xl font-semibold">Order #{order.id}</h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {new Date(order.createdAt).toLocaleDateString()}
-                  </p>
+                  <h2>Order #{order.id}</h2>
+                  <p>Placed by: {order.user.name}</p>
+                  <p>{new Date(order.createdAt).toLocaleDateString()}</p>
                 </div>
-                <div className="flex flex-col items-end">
-                  <p className="text-2xl font-bold">${order.total.toFixed(2)}</p>
-                  <span className={`px-2 py-1 mt-1 text-sm rounded ${order.status === 'PAID' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'}`}>
+                <div className="text-center">
+                  <p className="font-extrabold text-2xl">${calculateTotal(order.orderItems).toFixed(2)}</p>
+                  <span className={`status-badge ${getStatusClasses(order.status)}`}>
                     {order.status}
                   </span>
                 </div>
               </div>
-              <div>
-                <h3 className="mb-2 text-lg font-semibold">Items:</h3>
-                <ul className="space-y-2">
+              <div className='mt-8'>
+                <h3>Items:</h3>
+                <ul>
                   {order.orderItems.map((item) => (
-                    <li key={item.id} className="flex justify-between pb-2 border-b border-border">
+                    <li key={item.id} className="flex justify-between" style={{ borderBottom: '1px solid #eee', padding: '0.5rem 0' }}>
                       <span>
                         {item.menuItem.name} x {item.quantity}
                       </span>
-                      <span>${(item.menuItem.price * item.quantity).toFixed(2)}</span>
+                      <span className="font-bold">${(item.menuItem.price * item.quantity).toFixed(2)}</span>
                     </li>
                   ))}
                 </ul>
               </div>
+              {(user?.role === Role.ADMIN || user?.role === Role.MANAGER) && order.status !== 'CANCELLED' && (
+                <div className="mt-8">
+                  <button onClick={() => handleCancelOrder(order.id)} className="btn btn-danger">
+                    Cancel Order
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -29,7 +29,7 @@ enum OrderStatus {
 
 model User {
   id      Int      @id @default(autoincrement())
-  name    String
+  name    String   @unique
   role    Role
   country Country
 
@@ -39,7 +39,7 @@ model User {
 
 model Restaurant {
   id      Int      @id @default(autoincrement())
-  name    String
+  name    String   @unique
   country Country
 
   menuItems MenuItem[]
@@ -47,6 +47,8 @@ model Restaurant {
 
 model MenuItem {
   id           Int    @id @default(autoincrement())
+  name         String
+  description  String
   restaurantId Int
   price        Float
 
@@ -75,9 +77,12 @@ model OrderItem {
 }
 
 model PaymentMethod {
-  id     Int    @id @default(autoincrement())
-  userId Int
-  type   String
+  id      Int     @id @default(autoincrement())
+  userId  Int
+  type    String
+  enabled Boolean @default(true)
 
   user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, type])
 }

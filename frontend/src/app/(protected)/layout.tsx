@@ -27,9 +27,9 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div>
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <Navbar />
-      <main className="p-4">{children}</main>
+      <main className="p-8">{children}</main>
     </div>
   );
 }
